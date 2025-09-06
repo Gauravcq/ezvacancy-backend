@@ -22,7 +22,8 @@ const PORT = process.env.PORT || 8080;
 // --- Middleware ---
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
 app.use(cors({ origin: allowedOrigins }));
-app.use(helmet());
+// This is the corrected line
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json());
 app.use(morgan('tiny')); // Logs requests like "GET /api/jobs 200"
 
