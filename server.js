@@ -1,4 +1,4 @@
-// server.js (Final, Complete, and Professional Version)
+// server.js (The Absolute Final Version with Answer Keys)
 
 import 'dotenv/config';
 import express from 'express';
@@ -6,7 +6,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import session from 'express-session';
+import session from 'session';
 import AdminJS from 'adminjs';
 import AdminJSExpress from '@adminjs/express';
 import { Database, Resource } from '@adminjs/mongoose';
@@ -15,7 +15,7 @@ import { Database, Resource } from '@adminjs/mongoose';
 import Job from './models/Job.js';
 import AdmitCard from './models/AdmitCard.js';
 import Result from './models/Result.js';
-import AnswerKey from './models/AnswerKey.js'; // <-- Yahan 'K' ko bada kar dijiye, yeh SAHI haiALAT hai
+import AnswerKey from './models/AnswerKey.js'; // Naya Answer Key model
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -62,7 +62,7 @@ app.get('/api/answer-keys', asyncHandler(async (req, res) => {
     res.json({ data });
 }));
 
-// NAYA AUR SABSE ZAROORI ROUTE: Ek specific job ki detail uske slug se dhoondhne ke liye
+// DETAIL PAGE ROUTE: Ek specific job ki detail uske slug se dhoondhne ke liye
 app.get('/api/jobs/:slug', asyncHandler(async (req, res) => {
     const job = await Job.findOne({ slug: req.params.slug }).lean();
     if (!job) {
@@ -84,7 +84,6 @@ const start = async () => {
             resource: Job, 
             options: { 
                 parent: { name: 'Content Management', icon: 'Document' },
-                // Admin Panel ko behtar banane ke liye
                 properties: { 
                     shortDescription: { type: 'textarea' },
                     importantDates: { type: 'textarea' },
