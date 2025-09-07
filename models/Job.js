@@ -1,25 +1,41 @@
-// models/Job.js
-
+// models/Job.js (Final Upgraded Version)
 import mongoose from 'mongoose';
 import slugify from 'slugify';
 
 const JobSchema = new mongoose.Schema({
   title: { type: String, required: true },
   organization: { type: String, required: true },
-  
-  // --- YEH DO NAYI LINES ADD KAREIN ---
-  category: { type: String, enum: ['SSC', 'Banking', 'Railway', 'Police', 'Teaching', 'UPSC', 'Other'], required: true },
-  scope: { type: String, enum: ['Central', 'State'], required: true },
-  // ------------------------------------
+  postUpdateDate: { type: Date, default: Date.now },
+  shortDescription: { type: String, required: true }, // Short summary for the post page
 
-  postDate: { type: Date, default: Date.now },
-  lastDate: { type: Date },
-  description: { type: String, required: true },
+  // Details ke liye naye fields (inhe Admin Panel mein text area banayenge)
+  importantDates: { type: String }, 
+  applicationFee: { type: String },
+  ageLimit: { type: String },
+  vacancyDetails: { type: String },
+
+  // Links
   applyUrl: { type: String },
   noticeUrl: { type: String },
+  officialWebsiteUrl: { type: String },
+
+  // Unique URL ke liye
   slug: { type: String, unique: true, index: true },
 }, { timestamps: true });
 
-// ... baaki ka code same rahega ...
+// Slug banane wala code
+JobSchema.pre('validate', async function (next) {
+    if (this.isModified('title') || !this.slug) {
+        const baseSlug = slugify(this.title, { lower: true, strict: true, remove: /[*+~.()'"!:@]/g });
+        let slug = baseSlug;
+        let count = 2;
+        while (await this.constructor.findOne({ slug, _id: { $ne: this._id } })) {
+            slug = `${baseSlug}-${count}`;
+            count++;
+        }
+        this.slug = slug;
+    }
+    next();
+});
 
 export default mongoose.model('Job', JobSchema);
