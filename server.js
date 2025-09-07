@@ -1,4 +1,4 @@
-// server.js (Final, Complete, and Bug-Free Version)
+// server.js (Final, Complete, and Professional Version)
 
 import 'dotenv/config';
 import express from 'express';
@@ -15,14 +15,15 @@ import { Database, Resource } from '@adminjs/mongoose';
 import Job from './models/Job.js';
 import AdmitCard from './models/AdmitCard.js';
 import Result from './models/Result.js';
+import AnswerKey from './models/AnswerKey.js'; // <-- Yahan 'K' ko bada kar dijiye, yeh SAHI haiALAT hai
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// Middleware
+// Middleware Setup
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
 app.use(cors({ origin: allowedOrigins }));
-app.use(helmet({ contentSecurityPolicy: false })); // AdminJS ke liye zaroori
+app.use(helmet({ contentSecurityPolicy: false })); // AdminJS ke liye yeh zaroori hai
 app.use(express.json());
 app.use(morgan('tiny')); // Request logging ke liye
 
@@ -54,11 +55,17 @@ app.get('/api/results', asyncHandler(async (req, res) => {
   res.json({ data });
 }));
 
+// NAYA ROUTE: Homepage ke liye Answer Keys ka data
+app.get('/api/answer-keys', asyncHandler(async (req, res) => {
+    const { limit = 10 } = req.query;
+    const data = await AnswerKey.find({}).sort({ postDate: -1 }).limit(parseInt(limit)).lean();
+    res.json({ data });
+}));
+
 // NAYA AUR SABSE ZAROORI ROUTE: Ek specific job ki detail uske slug se dhoondhne ke liye
 app.get('/api/jobs/:slug', asyncHandler(async (req, res) => {
     const job = await Job.findOne({ slug: req.params.slug }).lean();
     if (!job) {
-        // Agar job na mile toh 404 error bhejo
         return res.status(404).json({ message: 'Job not found' });
     }
     res.json(job);
@@ -89,6 +96,7 @@ const start = async () => {
         },
         { resource: AdmitCard, options: { parent: { name: 'Content Management', icon: 'Document' } } },
         { resource: Result, options: { parent: { name: 'Content Management', icon: 'Document' } } },
+        { resource: AnswerKey, options: { parent: { name: 'Content Management', icon: 'Document' } } }, // Naya AnswerKey resource
     ],
     rootPath: '/admin',
     branding: { companyName: 'EZGOVTJOB Admin Panel' },
