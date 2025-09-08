@@ -25,6 +25,11 @@ export default (sequelize, DataTypes) => {
         allowNull: false,        // Change 1
         defaultValue: {}        // Change 2
     },
+     ageLimit: { // Age Limit wala table data
+        type: DataTypes.JSONB,
+        allowNull: false,
+        defaultValue: {}
+    },
     vacancyDetails: {
         type: DataTypes.JSONB,
         allowNull: false,        // Change 1

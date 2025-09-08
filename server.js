@@ -102,6 +102,7 @@ const start = async () => {
                 properties: {
                     importantDates: { type: 'textarea' },
                     applicationFee: { type: 'textarea' },
+                    ageLimit: { type: 'textarea' }, // Yahan add karein
                     vacancyDetails: { type: 'textarea' },
                     usefulLinks: { type: 'textarea' },
                     shortInformation: { type: 'textarea' },
@@ -110,15 +111,21 @@ const start = async () => {
                 },
                 listProperties: ['id', 'title', 'postType', 'SubCategoryId', 'postDate', 'updatedAt'],
                 showProperties: ['id', 'title', 'slug', 'postType', 'SubCategoryId', 'postDate', 'updatedAt', 'shortInformation', 'importantDates', 'applicationFee', 'vacancyDetails', 'howToApply', 'usefulLinks'],
-                editProperties: ['title', 'slug', 'postType', 'SubCategoryId', 'postDate', 'shortInformation', 'importantDates', 'applicationFee', 'vacancyDetails', 'howToApply', 'usefulLinks'],
+                editProperties: ['title', 'slug', 'postType', 'SubCategoryId', 'postDate', 'shortInformation', 'importantDates', 'applicationFee', 'ageLimit', 'vacancyDetails', 'howToApply', 'usefulLinks'],
                 actions: {
-                    new: { before: async (request) => { const { payload } = request; payload.importantDates = parseKeyValueString(payload.importantDates); payload.applicationFee = parseKeyValueString(payload.applicationFee); payload.vacancyDetails = parseKeyValueString(payload.vacancyDetails); payload.usefulLinks = parseKeyValueString(payload.usefulLinks); return request; } },
+                    new: { before: async (request) => { const { payload } = request; payload.importantDates = parseKeyValueString(payload.importantDates); payload.applicationFee = parseKeyValueString(payload.applicationFee); payload.
+                     ageLimit = parseKeyValueString(payload.ageLimit);payload.
+                    vacancyDetails = parseKeyValueString(payload.vacancyDetails); payload.usefulLinks
+                     = parseKeyValueString(payload.usefulLinks); return request; } },
                     edit: { 
-                        before: async (request) => { const { payload } = request; payload.importantDates = parseKeyValueString(payload.importantDates); payload.applicationFee = parseKeyValueString(payload.applicationFee); payload.vacancyDetails = parseKeyValueString(payload.vacancyDetails); payload.usefulLinks = parseKeyValueString(payload.usefulLinks); return request; },
+                        before: async (request) => { const { payload } = request; payload.importantDates = parseKeyValueString(payload.importantDates); payload.applicationFee = parseKeyValueString(payload.applicationFee); payload.
+                         ageLimit = parseKeyValueString(payload.ageLimit);payload.
+                        vacancyDetails = parseKeyValueString(payload.vacancyDetails); payload.usefulLinks = parseKeyValueString(payload.usefulLinks); return request; },
                         after: async (response) => {
                             if (response.record && response.record.params) {
                                 response.record.params.importantDates = formatObjectToString(response.record.params.importantDates);
                                 response.record.params.applicationFee = formatObjectToString(response.record.params.applicationFee);
+                                response.record.params.ageLimit = formatObjectToString(response.record.params.ageLimit); // Yahan add karein
                                 response.record.params.vacancyDetails = formatObjectToString(response.record.params.vacancyDetails);
                                 response.record.params.usefulLinks = formatObjectToString(response.record.params.usefulLinks);
                             }
@@ -130,6 +137,7 @@ const start = async () => {
                             if (response.record && response.record.params) {
                                 response.record.params.importantDates = formatObjectToString(response.record.params.importantDates);
                                 response.record.params.applicationFee = formatObjectToString(response.record.params.applicationFee);
+                                 response.record.params.ageLimit = formatObjectToString(response.record.params.ageLimit); // Yahan add karein
                                 response.record.params.vacancyDetails = formatObjectToString(response.record.params.vacancyDetails);
                                 response.record.params.usefulLinks = formatObjectToString(response.record.params.usefulLinks);
                             }
