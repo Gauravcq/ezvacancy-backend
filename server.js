@@ -1,4 +1,4 @@
-// server.js (Final Version with All Routes including the new '/type' route)
+// server.js (THE ABSOLUTE FINAL, SAFEST VERSION - NO MORE CHANGES AFTER THIS)
 
 import 'dotenv/config';
 import express from 'express';
@@ -11,9 +11,12 @@ import { Sequelize, DataTypes } from 'sequelize';
 import AdminJSSequelize from '@adminjs/sequelize';
 import session from 'express-session';
 
-// Helper function to parse key-value string to JSON
+// --- HELPER FUNCTION (UPDATED & SAFER) ---
 const parseKeyValueString = (str) => {
-    if (!str || typeof str !== 'string') return null;
+    // Agar input string nahi hai ya khali hai, to empty object return karo
+    if (!str || typeof str !== 'string' || str.trim() === '') {
+        return {};
+    }
     const obj = {};
     str.split('\n').forEach(line => {
         const parts = line.split(':');
@@ -25,10 +28,11 @@ const parseKeyValueString = (str) => {
             }
         }
     });
-    return Object.keys(obj).length > 0 ? obj : null;
+    // Agar kuch parse hua, to object return karo, warna empty object
+    return obj;
 };
 
-// === 1. DATABASE CONNECTION (SEQUELIZE) ===
+// === 1. DATABASE CONNECTION ===
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: 'postgres',
   logging: false,
@@ -93,22 +97,13 @@ app.get('/api/category/:categorySlug', asyncHandler(async (req, res) => {
     res.json(posts);
 }));
 
-// --- YEH NAYA ROUTE ADD HO GAYA HAI ---
-// Post type se saare posts laane ke liye (e.g., saare results)
 app.get('/api/posts/type/:postType', asyncHandler(async (req, res) => {
     const { postType } = req.params;
     const validTypes = ['notification', 'result', 'admit-card', 'answer-key', 'syllabus'];
-    
     if (!validTypes.includes(postType)) {
         return res.status(400).json({ message: 'Invalid post type' });
     }
-
-    const posts = await Post.findAll({
-        where: { postType: postType },
-        order: [['postDate', 'DESC']],
-        include: { model: SubCategory, include: { model: Category } }
-    });
-
+    const posts = await Post.findAll({ where: { postType: postType }, order: [['postDate', 'DESC']], include: { model: SubCategory, include: { model: Category } } });
     res.json(posts);
 }));
 
@@ -131,9 +126,28 @@ const start = async () => {
                 editProperties: ['title', 'slug', 'postType', 'SubCategoryId', 'postDate', 'shortInformation', 'importantDates', 'applicationFee', 'vacancyDetails', 'howToApply', 'usefulLinks'],
                 showProperties: ['title', 'slug', 'postType', 'SubCategoryId', 'postDate', 'shortInformation', 'importantDates', 'applicationFee', 'vacancyDetails', 'howToApply', 'usefulLinks'],
                 listProperties: ['id', 'title', 'postType', 'postDate'],
+                // --- ACTION HOOKS (UPDATED & SAFER) ---
                 actions: {
-                    new: { before: async (request) => { const { payload } = request; if (payload.importantDates) payload.importantDates = parseKeyValueString(payload.importantDates); if (payload.applicationFee) payload.applicationFee = parseKeyValueString(payload.applicationFee); if (payload.vacancyDetails) payload.vacancyDetails = parseKeyValueString(payload.vacancyDetails); if (payload.usefulLinks) payload.usefulLinks = parseKeyValueString(payload.usefulLinks); return request; } },
-                    edit: { before: async (request) => { const { payload } = request; if (payload.importantDates) payload.importantDates = parseKeyValueString(payload.importantDates); if (payload.applicationFee) payload.applicationFee = parseKeyValueString(payload.applicationFee); if (payload.vacancyDetails) payload.vacancyDetails = parseKeyValueString(payload.vacancyDetails); if (payload.usefulLinks) payload.usefulLinks = parseKeyValueString(payload.usefulLinks); return request; } }
+                    new: {
+                        before: async (request) => {
+                            const { payload } = request;
+                            payload.importantDates = parseKeyValueString(payload.importantDates);
+                            payload.applicationFee = parseKeyValueString(payload.applicationFee);
+                            payload.vacancyDetails = parseKeyValueString(payload.vacancyDetails);
+                            payload.usefulLinks = parseKeyValueString(payload.usefulLinks);
+                            return request;
+                        }
+                    },
+                    edit: {
+                        before: async (request) => {
+                            const { payload } = request;
+                            payload.importantDates = parseKeyValueString(payload.importantDates);
+                            payload.applicationFee = parseKeyValueString(payload.applicationFee);
+                            payload.vacancyDetails = parseKeyValueString(payload.vacancyDetails);
+                            payload.usefulLinks = parseKeyValueString(payload.usefulLinks);
+                            return request;
+                        }
+                    }
                 }
             },
         },
@@ -158,7 +172,7 @@ const start = async () => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+        maxAge: 1000 * 60 * 60 * 24 * 7
     }
   });
 

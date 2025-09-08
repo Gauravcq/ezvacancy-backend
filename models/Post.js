@@ -1,4 +1,5 @@
-// models/Post.js (New Version with Structured Fields)
+// BACKEND Project -> models/Post.js (FINAL, SAFER VERSION)
+
 export default (sequelize, DataTypes) => {
   const Post = sequelize.define('Post', {
     postType: {
@@ -10,29 +11,33 @@ export default (sequelize, DataTypes) => {
     postDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
     
     // Yahan humne 'content' ko hata kar naye fields add kiye hain
-    shortInformation: { // Post ke upar 2-line ki summary
+    shortInformation: {
         type: DataTypes.TEXT,
         allowNull: true,
     },
-    importantDates: { // Important Dates wala table data
-        type: DataTypes.JSONB, // JSON format mein data save karenge
-        allowNull: true,
-    },
-    applicationFee: { // Application Fee wala table data
+    importantDates: {
         type: DataTypes.JSONB,
-        allowNull: true,
+        allowNull: false,        // Change 1: Cannot be null
+        defaultValue: {}        // Change 2: Default is an empty object
     },
-    vacancyDetails: { // Vacancy Details wala table data
+    applicationFee: {
         type: DataTypes.JSONB,
-        allowNull: true,
+        allowNull: false,        // Change 1
+        defaultValue: {}        // Change 2
     },
-    howToApply: { // How to Apply ke steps
+    vacancyDetails: {
+        type: DataTypes.JSONB,
+        allowNull: false,        // Change 1
+        defaultValue: {}        // Change 2
+    },
+    howToApply: {
         type: DataTypes.TEXT,
         allowNull: true,
     },
-    usefulLinks: { // Apply Online, Notification link etc.
+    usefulLinks: {
         type: DataTypes.JSONB,
-        allowNull: true,
+        allowNull: false,        // Change 1
+        defaultValue: {}        // Change 2
     }
   });
   return Post;
