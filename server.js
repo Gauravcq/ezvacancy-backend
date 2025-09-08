@@ -1,4 +1,4 @@
-// FINAL CORRECTED VERSION - DELETE ALL OLD CODE BEFORE PASTING THIS
+// FINAL SIMPLIFIED VERSION - NO CUSTOM COMPONENTS
 
 import 'dotenv/config';
 import express from 'express';
@@ -26,13 +26,19 @@ const parseKeyValueString = (str) => {
     return obj;
 };
 
+const formatObjectToString = (obj) => {
+    if (!obj || typeof obj !== 'object' || Object.keys(obj).length === 0) {
+        return '';
+    }
+    return Object.entries(obj).map(([key, value]) => `${key} : ${value}`).join('\n');
+};
+
 // === 1. DATABASE CONNECTION ===
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: 'postgres',
   logging: false,
   dialectOptions: { ssl: { require: true, rejectUnauthorized: false } }
 });
-
 AdminJS.registerAdapter({ Database: AdminJSSequelize.Database, Resource: AdminJSSequelize.Resource });
 
 // === 2. MODELS IMPORT & RELATIONSHIPS ===
@@ -59,25 +65,21 @@ app.use(morgan('tiny'));
 // === 4. PUBLIC API ROUTES ===
 const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
-
 app.get('/api/homepage-sections', asyncHandler(async (req, res) => {
     const sscPosts = await Post.findAll({ limit: 10, order: [['postDate', 'DESC']], include: { model: SubCategory, required: true, include: { model: Category, where: { slug: 'ssc' }}}});
     const railwayPosts = await Post.findAll({ limit: 10, order: [['postDate', 'DESC']], include: { model: SubCategory, required: true, include: { model: Category, where: { slug: 'railway' }}}});
     const bankingPosts = await Post.findAll({ limit: 10, order: [['postDate', 'DESC']], include: { model: SubCategory, required: true, include: { model: Category, where: { slug: 'banking' }}}});
     res.json({ ssc: sscPosts, railway: railwayPosts, banking: bankingPosts });
 }));
-
 app.get('/api/posts/:slug', asyncHandler(async (req, res) => {
     const post = await Post.findOne({ where: { slug: req.params.slug }, include: { model: SubCategory, include: { model: Category } } });
     if (!post) return res.status(404).json({ message: 'Post not found' });
     res.json(post);
 }));
-
 app.get('/api/category/:categorySlug', asyncHandler(async (req, res) => {
     const posts = await Post.findAll({ order: [['postDate', 'DESC']], include: { model: SubCategory, required: true, include: { model: Category, where: { slug: req.params.categorySlug }}}});
     res.json(posts);
 }));
-
 app.get('/api/posts/type/:postType', asyncHandler(async (req, res) => {
     const { postType } = req.params;
     const validTypes = ['notification', 'result', 'admit-card', 'answer-key', 'syllabus'];
@@ -98,34 +100,55 @@ const start = async () => {
             resource: Post,
             options: {
                 properties: {
-                    importantDates: { type: 'textarea', components: { edit: AdminJS.bundle('./components/json-textarea.edit.js') }},
-                    applicationFee: { type: 'textarea', components: { edit: AdminJS.bundle('./components/json-textarea.edit.js') }},
-                    vacancyDetails: { type: 'textarea', components: { edit: AdminJS.bundle('./components/json-textarea.edit.js') }},
-                    usefulLinks: { type: 'textarea', components: { edit: AdminJS.bundle('./components/json-textarea.edit.js') }},
+                    importantDates: { type: 'textarea' },
+                    applicationFee: { type: 'textarea' },
+                    vacancyDetails: { type: 'textarea' },
+                    usefulLinks: { type: 'textarea' },
                     shortInformation: { type: 'textarea' },
                     howToApply: { type: 'textarea' },
                     postType: { availableValues: [ { value: 'notification', label: 'Notification / Job' }, { value: 'result', label: 'Result' }, { value: 'admit-card', label: 'Admit Card' }, { value: 'answer-key', label: 'Answer Key' }, { value: 'syllabus', label: 'Syllabus' } ]},
                 },
+                listProperties: ['id', 'title', 'postType', 'SubCategoryId', 'postDate', 'updatedAt'],
+                showProperties: ['id', 'title', 'slug', 'postType', 'SubCategoryId', 'postDate', 'updatedAt', 'shortInformation', 'importantDates', 'applicationFee', 'vacancyDetails', 'howToApply', 'usefulLinks'],
                 editProperties: ['title', 'slug', 'postType', 'SubCategoryId', 'postDate', 'shortInformation', 'importantDates', 'applicationFee', 'vacancyDetails', 'howToApply', 'usefulLinks'],
-                listProperties: ['id', 'title', 'postType', 'postDate'],
                 actions: {
+                    // SAVE karne ke liye string ko JSON me badlo
                     new: { before: async (request) => { const { payload } = request; payload.importantDates = parseKeyValueString(payload.importantDates); payload.applicationFee = parseKeyValueString(payload.applicationFee); payload.vacancyDetails = parseKeyValueString(payload.vacancyDetails); payload.usefulLinks = parseKeyValueString(payload.usefulLinks); return request; } },
-                    edit: { before: async (request) => { const { payload } = request; payload.importantDates = parseKeyValueString(payload.importantDates); payload.applicationFee = parseKeyValueString(payload.applicationFee); payload.vacancyDetails = parseKeyValueString(payload.vacancyDetails); payload.usefulLinks = parseKeyValueString(payload.usefulLinks); return request; } }
+                    edit: { 
+                        // EDIT page par aane se pehle, JSON ko string me badlo
+                        after: async (response) => {
+                            const { record } = response;
+                            record.params.importantDates = formatObjectToString(record.params.importantDates);
+                            record.params.applicationFee = formatObjectToString(record.params.applicationFee);
+                            record.params.vacancyDetails = formatObjectToString(record.params.vacancyDetails);
+                            record.params.usefulLinks = formatObjectToString(record.params.usefulLinks);
+                            return response;
+                        },
+                        // EDIT page se SAVE karne ke liye, string ko JSON me badlo
+                        before: async (request) => { const { payload } = request; payload.importantDates = parseKeyValueString(payload.importantDates); payload.applicationFee = parseKeyValueString(payload.applicationFee); payload.vacancyDetails = parseKeyValueString(payload.vacancyDetails); payload.usefulLinks = parseKeyValueString(payload.usefulLinks); return request; } 
+                    },
+                    // SHOW page par aane se pehle, JSON ko string me badlo
+                    show: {
+                        after: async (response) => {
+                            const { record } = response;
+                            record.params.importantDates = formatObjectToString(record.params.importantDates);
+                            record.params.applicationFee = formatObjectToString(record.params.applicationFee);
+                            record.params.vacancyDetails = formatObjectToString(record.params.vacancyDetails);
+                            record.params.usefulLinks = formatObjectToString(record.params.usefulLinks);
+                            return response;
+                        }
+                    }
                 }
             },
         },
     ],
     rootPath: '/admin',
     branding: { companyName: 'EZGOVTJOB Admin Panel' },
-    bundler: {
-      babelConfig: { presets: ["@babel/preset-react"] },
-    },
   });
 
   if (process.env.NODE_ENV === 'production') {
     app.set('trust proxy', 1);
   }
-
   const adminRouter = AdminJSExpress.buildAuthenticatedRouter(admin, {
     authenticate: async (email, password) => (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) ? { email } : null,
     cookieName: 'ezgovtjob-session',
