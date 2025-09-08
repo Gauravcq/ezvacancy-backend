@@ -1,4 +1,4 @@
-// FINAL CORRECTED VERSION - SYNTAX ERRORS FIXED
+// FINAL SERVER.JS - WITH AGE LIMIT & ROBUST EDIT/SHOW HOOKS
 
 import 'dotenv/config';
 import express from 'express';
@@ -49,9 +49,9 @@ const Category = CategoryModel(sequelize, DataTypes);
 const SubCategory = SubCategoryModel(sequelize, DataTypes);
 const Post = PostModel(sequelize, DataTypes);
 Category.hasMany(SubCategory, { foreignKey: 'CategoryId' });
-SubCategory.belongsTo(Category, { foreignKey: 'CategoryId' }); // <-- SYNTAX FIX
+SubCategory.belongsTo(Category, { foreignKey: 'CategoryId' });
 SubCategory.hasMany(Post, { foreignKey: 'SubCategoryId' });
-Post.belongsTo(SubCategory, { foreignKey: 'SubCategoryId' }); // <-- SYNTAX FIX
+Post.belongsTo(SubCategory, { foreignKey: 'SubCategoryId' });
 
 // === 3. APP & MIDDLEWARE SETUP ===
 const app = express();
@@ -65,6 +65,7 @@ app.use(morgan('tiny'));
 // === 4. PUBLIC API ROUTES ===
 const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+// ... baaki saare API routes ...
 app.get('/api/homepage-sections', asyncHandler(async (req, res) => {
     const sscPosts = await Post.findAll({ limit: 10, order: [['postDate', 'DESC']], include: { model: SubCategory, required: true, include: { model: Category, where: { slug: 'ssc' }}}});
     const railwayPosts = await Post.findAll({ limit: 10, order: [['postDate', 'DESC']], include: { model: SubCategory, required: true, include: { model: Category, where: { slug: 'railway' }}}});
@@ -88,6 +89,7 @@ app.get('/api/posts/type/:postType', asyncHandler(async (req, res) => {
     res.json(posts);
 }));
 
+
 // === 5. ADMINJS SETUP & SERVER START ===
 const start = async () => {
   await sequelize.sync({ alter: true });
@@ -102,30 +104,25 @@ const start = async () => {
                 properties: {
                     importantDates: { type: 'textarea' },
                     applicationFee: { type: 'textarea' },
-                    ageLimit: { type: 'textarea' }, // Yahan add karein
+                    ageLimit: { type: 'textarea' },
                     vacancyDetails: { type: 'textarea' },
                     usefulLinks: { type: 'textarea' },
                     shortInformation: { type: 'textarea' },
                     howToApply: { type: 'textarea' },
                     postType: { availableValues: [ { value: 'notification', label: 'Notification / Job' }, { value: 'result', label: 'Result' }, { value: 'admit-card', label: 'Admit Card' }, { value: 'answer-key', label: 'Answer Key' }, { value: 'syllabus', label: 'Syllabus' } ]},
                 },
-                listProperties: ['id', 'title', 'postType', 'SubCategoryId', 'postDate', 'updatedAt'],
-                showProperties: ['id', 'title', 'slug', 'postType', 'SubCategoryId', 'postDate', 'updatedAt', 'shortInformation', 'importantDates', 'applicationFee', 'vacancyDetails', 'howToApply', 'usefulLinks'],
+                listProperties: ['id', 'title', 'postType', 'SubCategoryId', 'postDate'],
+                showProperties: ['id', 'title', 'slug', 'postType', 'SubCategoryId', 'postDate', 'shortInformation', 'importantDates', 'applicationFee', 'ageLimit', 'vacancyDetails', 'howToApply', 'usefulLinks'],
                 editProperties: ['title', 'slug', 'postType', 'SubCategoryId', 'postDate', 'shortInformation', 'importantDates', 'applicationFee', 'ageLimit', 'vacancyDetails', 'howToApply', 'usefulLinks'],
                 actions: {
-                    new: { before: async (request) => { const { payload } = request; payload.importantDates = parseKeyValueString(payload.importantDates); payload.applicationFee = parseKeyValueString(payload.applicationFee); payload.
-                     ageLimit = parseKeyValueString(payload.ageLimit);payload.
-                    vacancyDetails = parseKeyValueString(payload.vacancyDetails); payload.usefulLinks
-                     = parseKeyValueString(payload.usefulLinks); return request; } },
+                    new: { before: async (request) => { const { payload } = request; payload.importantDates = parseKeyValueString(payload.importantDates); payload.applicationFee = parseKeyValueString(payload.applicationFee); payload.ageLimit = parseKeyValueString(payload.ageLimit); payload.vacancyDetails = parseKeyValueString(payload.vacancyDetails); payload.usefulLinks = parseKeyValueString(payload.usefulLinks); return request; } },
                     edit: { 
-                        before: async (request) => { const { payload } = request; payload.importantDates = parseKeyValueString(payload.importantDates); payload.applicationFee = parseKeyValueString(payload.applicationFee); payload.
-                         ageLimit = parseKeyValueString(payload.ageLimit);payload.
-                        vacancyDetails = parseKeyValueString(payload.vacancyDetails); payload.usefulLinks = parseKeyValueString(payload.usefulLinks); return request; },
+                        before: async (request) => { const { payload } = request; payload.importantDates = parseKeyValueString(payload.importantDates); payload.applicationFee = parseKeyValueString(payload.applicationFee); payload.ageLimit = parseKeyValueString(payload.ageLimit); payload.vacancyDetails = parseKeyValueString(payload.vacancyDetails); payload.usefulLinks = parseKeyValueString(payload.usefulLinks); return request; },
                         after: async (response) => {
                             if (response.record && response.record.params) {
                                 response.record.params.importantDates = formatObjectToString(response.record.params.importantDates);
                                 response.record.params.applicationFee = formatObjectToString(response.record.params.applicationFee);
-                                response.record.params.ageLimit = formatObjectToString(response.record.params.ageLimit); // Yahan add karein
+                                response.record.params.ageLimit = formatObjectToString(response.record.params.ageLimit);
                                 response.record.params.vacancyDetails = formatObjectToString(response.record.params.vacancyDetails);
                                 response.record.params.usefulLinks = formatObjectToString(response.record.params.usefulLinks);
                             }
@@ -137,7 +134,7 @@ const start = async () => {
                             if (response.record && response.record.params) {
                                 response.record.params.importantDates = formatObjectToString(response.record.params.importantDates);
                                 response.record.params.applicationFee = formatObjectToString(response.record.params.applicationFee);
-                                 response.record.params.ageLimit = formatObjectToString(response.record.params.ageLimit); // Yahan add karein
+                                response.record.params.ageLimit = formatObjectToString(response.record.params.ageLimit);
                                 response.record.params.vacancyDetails = formatObjectToString(response.record.params.vacancyDetails);
                                 response.record.params.usefulLinks = formatObjectToString(response.record.params.usefulLinks);
                             }
