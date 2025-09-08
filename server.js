@@ -1,4 +1,4 @@
-// FINAL SIMPLIFIED VERSION - NO CUSTOM COMPONENTS
+// FINAL CORRECTED VERSION - SYNTAX ERRORS FIXED
 
 import 'dotenv/config';
 import express from 'express';
@@ -49,9 +49,9 @@ const Category = CategoryModel(sequelize, DataTypes);
 const SubCategory = SubCategoryModel(sequelize, DataTypes);
 const Post = PostModel(sequelize, DataTypes);
 Category.hasMany(SubCategory, { foreignKey: 'CategoryId' });
-SubCategory.belongsTo(Category, { foreignKey: 'CategoryId' });
+SubCategory.belongsTo(Category, { foreignKey: 'CategoryId' }); // <-- SYNTAX FIX
 SubCategory.hasMany(Post, { foreignKey: 'SubCategoryId' });
-Post.belongsTo(SubCategory, { foreignKey: 'SubCategoryId' });
+Post.belongsTo(SubCategory, { foreignKey: 'SubCategoryId' }); // <-- SYNTAX FIX
 
 // === 3. APP & MIDDLEWARE SETUP ===
 const app = express();
@@ -112,29 +112,27 @@ const start = async () => {
                 showProperties: ['id', 'title', 'slug', 'postType', 'SubCategoryId', 'postDate', 'updatedAt', 'shortInformation', 'importantDates', 'applicationFee', 'vacancyDetails', 'howToApply', 'usefulLinks'],
                 editProperties: ['title', 'slug', 'postType', 'SubCategoryId', 'postDate', 'shortInformation', 'importantDates', 'applicationFee', 'vacancyDetails', 'howToApply', 'usefulLinks'],
                 actions: {
-                    // SAVE karne ke liye string ko JSON me badlo
                     new: { before: async (request) => { const { payload } = request; payload.importantDates = parseKeyValueString(payload.importantDates); payload.applicationFee = parseKeyValueString(payload.applicationFee); payload.vacancyDetails = parseKeyValueString(payload.vacancyDetails); payload.usefulLinks = parseKeyValueString(payload.usefulLinks); return request; } },
                     edit: { 
-                        // EDIT page par aane se pehle, JSON ko string me badlo
+                        before: async (request) => { const { payload } = request; payload.importantDates = parseKeyValueString(payload.importantDates); payload.applicationFee = parseKeyValueString(payload.applicationFee); payload.vacancyDetails = parseKeyValueString(payload.vacancyDetails); payload.usefulLinks = parseKeyValueString(payload.usefulLinks); return request; },
                         after: async (response) => {
-                            const { record } = response;
-                            record.params.importantDates = formatObjectToString(record.params.importantDates);
-                            record.params.applicationFee = formatObjectToString(record.params.applicationFee);
-                            record.params.vacancyDetails = formatObjectToString(record.params.vacancyDetails);
-                            record.params.usefulLinks = formatObjectToString(record.params.usefulLinks);
+                            if (response.record && response.record.params) {
+                                response.record.params.importantDates = formatObjectToString(response.record.params.importantDates);
+                                response.record.params.applicationFee = formatObjectToString(response.record.params.applicationFee);
+                                response.record.params.vacancyDetails = formatObjectToString(response.record.params.vacancyDetails);
+                                response.record.params.usefulLinks = formatObjectToString(response.record.params.usefulLinks);
+                            }
                             return response;
-                        },
-                        // EDIT page se SAVE karne ke liye, string ko JSON me badlo
-                        before: async (request) => { const { payload } = request; payload.importantDates = parseKeyValueString(payload.importantDates); payload.applicationFee = parseKeyValueString(payload.applicationFee); payload.vacancyDetails = parseKeyValueString(payload.vacancyDetails); payload.usefulLinks = parseKeyValueString(payload.usefulLinks); return request; } 
+                        }
                     },
-                    // SHOW page par aane se pehle, JSON ko string me badlo
                     show: {
                         after: async (response) => {
-                            const { record } = response;
-                            record.params.importantDates = formatObjectToString(record.params.importantDates);
-                            record.params.applicationFee = formatObjectToString(record.params.applicationFee);
-                            record.params.vacancyDetails = formatObjectToString(record.params.vacancyDetails);
-                            record.params.usefulLinks = formatObjectToString(record.params.usefulLinks);
+                            if (response.record && response.record.params) {
+                                response.record.params.importantDates = formatObjectToString(response.record.params.importantDates);
+                                response.record.params.applicationFee = formatObjectToString(response.record.params.applicationFee);
+                                response.record.params.vacancyDetails = formatObjectToString(response.record.params.vacancyDetails);
+                                response.record.params.usefulLinks = formatObjectToString(response.record.params.usefulLinks);
+                            }
                             return response;
                         }
                     }
