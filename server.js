@@ -1,4 +1,4 @@
-// FINAL SERVER.JS - WITH AGE LIMIT & ROBUST EDIT/SHOW HOOKS
+// FILE: ezvacancy-backend/server.js
 
 import 'dotenv/config';
 import express from 'express';
@@ -10,28 +10,6 @@ import AdminJSExpress from '@adminjs/express';
 import { Sequelize, DataTypes } from 'sequelize';
 import AdminJSSequelize from '@adminjs/sequelize';
 import session from 'express-session';
-
-// --- HELPER FUNCTIONS ---
-const parseKeyValueString = (str) => {
-    if (!str || typeof str !== 'string' || str.trim() === '') { return {}; }
-    const obj = {};
-    str.split('\n').forEach(line => {
-        const parts = line.split(':');
-        if (parts.length >= 2) {
-            const key = parts[0].trim();
-            const value = parts.slice(1).join(':').trim();
-            if (key && value) { obj[key] = value; }
-        }
-    });
-    return obj;
-};
-
-const formatObjectToString = (obj) => {
-    if (!obj || typeof obj !== 'object' || Object.keys(obj).length === 0) {
-        return '';
-    }
-    return Object.entries(obj).map(([key, value]) => `${key} : ${value}`).join('\n');
-};
 
 // === 1. DATABASE CONNECTION ===
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
@@ -65,7 +43,7 @@ app.use(morgan('tiny'));
 // === 4. PUBLIC API ROUTES ===
 const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
-// ... baaki saare API routes ...
+
 app.get('/api/homepage-sections', asyncHandler(async (req, res) => {
     const sscPosts = await Post.findAll({ limit: 10, order: [['postDate', 'DESC']], include: { model: SubCategory, required: true, include: { model: Category, where: { slug: 'ssc' }}}});
     const railwayPosts = await Post.findAll({ limit: 10, order: [['postDate', 'DESC']], include: { model: SubCategory, required: true, include: { model: Category, where: { slug: 'railway' }}}});
@@ -89,7 +67,6 @@ app.get('/api/posts/type/:postType', asyncHandler(async (req, res) => {
     res.json(posts);
 }));
 
-
 // === 5. ADMINJS SETUP & SERVER START ===
 const start = async () => {
   await sequelize.sync({ alter: true });
@@ -101,6 +78,7 @@ const start = async () => {
         {
             resource: Post,
             options: {
+                // This is now very simple. No complex hooks or components.
                 properties: {
                     importantDates: { type: 'textarea' },
                     applicationFee: { type: 'textarea' },
@@ -111,37 +89,6 @@ const start = async () => {
                     howToApply: { type: 'textarea' },
                     postType: { availableValues: [ { value: 'notification', label: 'Notification / Job' }, { value: 'result', label: 'Result' }, { value: 'admit-card', label: 'Admit Card' }, { value: 'answer-key', label: 'Answer Key' }, { value: 'syllabus', label: 'Syllabus' } ]},
                 },
-                listProperties: ['id', 'title', 'postType', 'SubCategoryId', 'postDate'],
-                showProperties: ['id', 'title', 'slug', 'postType', 'SubCategoryId', 'postDate', 'shortInformation', 'importantDates', 'applicationFee', 'ageLimit', 'vacancyDetails', 'howToApply', 'usefulLinks'],
-                editProperties: ['title', 'slug', 'postType', 'SubCategoryId', 'postDate', 'shortInformation', 'importantDates', 'applicationFee', 'ageLimit', 'vacancyDetails', 'howToApply', 'usefulLinks'],
-                actions: {
-                    new: { before: async (request) => { const { payload } = request; payload.importantDates = parseKeyValueString(payload.importantDates); payload.applicationFee = parseKeyValueString(payload.applicationFee); payload.ageLimit = parseKeyValueString(payload.ageLimit); payload.vacancyDetails = parseKeyValueString(payload.vacancyDetails); payload.usefulLinks = parseKeyValueString(payload.usefulLinks); return request; } },
-                    edit: { 
-                        before: async (request) => { const { payload } = request; payload.importantDates = parseKeyValueString(payload.importantDates); payload.applicationFee = parseKeyValueString(payload.applicationFee); payload.ageLimit = parseKeyValueString(payload.ageLimit); payload.vacancyDetails = parseKeyValueString(payload.vacancyDetails); payload.usefulLinks = parseKeyValueString(payload.usefulLinks); return request; },
-                        after: async (response) => {
-                            if (response.record && response.record.params) {
-                                response.record.params.importantDates = formatObjectToString(response.record.params.importantDates);
-                                response.record.params.applicationFee = formatObjectToString(response.record.params.applicationFee);
-                                response.record.params.ageLimit = formatObjectToString(response.record.params.ageLimit);
-                                response.record.params.vacancyDetails = formatObjectToString(response.record.params.vacancyDetails);
-                                response.record.params.usefulLinks = formatObjectToString(response.record.params.usefulLinks);
-                            }
-                            return response;
-                        }
-                    },
-                    show: {
-                        after: async (response) => {
-                            if (response.record && response.record.params) {
-                                response.record.params.importantDates = formatObjectToString(response.record.params.importantDates);
-                                response.record.params.applicationFee = formatObjectToString(response.record.params.applicationFee);
-                                response.record.params.ageLimit = formatObjectToString(response.record.params.ageLimit);
-                                response.record.params.vacancyDetails = formatObjectToString(response.record.params.vacancyDetails);
-                                response.record.params.usefulLinks = formatObjectToString(response.record.params.usefulLinks);
-                            }
-                            return response;
-                        }
-                    }
-                }
             },
         },
     ],
