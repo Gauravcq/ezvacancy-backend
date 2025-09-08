@@ -1,4 +1,4 @@
-// server.js (Final Corrected Version for Production)
+// server.js (Final Version with All Routes including the new '/type' route)
 
 import 'dotenv/config';
 import express from 'express';
@@ -93,6 +93,25 @@ app.get('/api/category/:categorySlug', asyncHandler(async (req, res) => {
     res.json(posts);
 }));
 
+// --- YEH NAYA ROUTE ADD HO GAYA HAI ---
+// Post type se saare posts laane ke liye (e.g., saare results)
+app.get('/api/posts/type/:postType', asyncHandler(async (req, res) => {
+    const { postType } = req.params;
+    const validTypes = ['notification', 'result', 'admit-card', 'answer-key', 'syllabus'];
+    
+    if (!validTypes.includes(postType)) {
+        return res.status(400).json({ message: 'Invalid post type' });
+    }
+
+    const posts = await Post.findAll({
+        where: { postType: postType },
+        order: [['postDate', 'DESC']],
+        include: { model: SubCategory, include: { model: Category } }
+    });
+
+    res.json(posts);
+}));
+
 
 // === 5. ADMINJS SETUP & SERVER START ===
 const start = async () => {
@@ -123,7 +142,6 @@ const start = async () => {
     branding: { companyName: 'EZGOVTJOB Admin Panel' },
   });
 
-  // --- LOGIN FIX IS HERE ---
   if (process.env.NODE_ENV === 'production') {
     app.set('trust proxy', 1);
   }
@@ -143,7 +161,6 @@ const start = async () => {
         maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
     }
   });
-  // --- END OF LOGIN FIX ---
 
   app.use(admin.options.rootPath, adminRouter);
   app.use((err, req, res, next) => { console.error(err.stack); res.status(500).send('Something broke!'); });
