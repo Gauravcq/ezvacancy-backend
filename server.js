@@ -116,6 +116,34 @@ app.get('/api/posts/subcategory/:subCategorySlug', asyncHandler(async (req, res)
     });
     res.json(posts);
 }));
+// BACKEND -> server.js (ADD THIS NEW ROUTE)
+
+// ... baaki API routes ke baad ...
+import { Op } from 'sequelize'; // Yeh line file ke sabse upar, baaki imports ke saath daalein
+
+// Naya API Route: Search ke liye
+app.get('/api/search', asyncHandler(async (req, res) => {
+    const { q } = req.query; // URL se search query nikalo (e.g., ?q=cgl)
+
+    if (!q || q.trim().length < 3) {
+        // Agar query nahi hai ya 3 characters se chhoti hai, to khaali result bhejo
+        return res.json([]);
+    }
+
+    // Post ke title me search karo (case-insensitive)
+    const posts = await Post.findAll({
+        where: {
+            title: {
+                [Op.iLike]: `%${q}%` // iLike case-insensitive search ke liye hai
+            }
+        },
+        limit: 20, // Sirf 20 results dikhao
+        order: [['postDate', 'DESC']],
+        include: { model: SubCategory, include: { model: Category } }
+    });
+
+    res.json(posts);
+}));
 
 // === 5. ADMINJS SETUP & SERVER START ===
 const start = async () => {
