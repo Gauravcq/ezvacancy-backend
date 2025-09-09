@@ -1,5 +1,5 @@
 // FINAL CORRECTED VERSION - DELETE ALL OLD CODE BEFORE PASTING THIS
-
+import { Op } from 'sequelize'; 
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -103,17 +103,27 @@ app.get('/api/subcategories/:categorySlug', asyncHandler(async (req, res) => {
     res.json(subCategories);
 }));
 
-// Naya Route 2: Ek specific sub-category ke saare posts laane ke liye
-app.get('/api/posts/subcategory/:subCategorySlug', asyncHandler(async (req, res) => {
+// Naya API Route: Search ke liye
+app.get('/api/search', asyncHandler(async (req, res) => {
+    const { q } = req.query; // URL se search query nikalo (e.g., ?q=cgl)
+
+    if (!q || q.trim().length < 2) { // Changed to 2 characters for better search
+        // Agar query nahi hai ya 2 characters se chhoti hai, to khaali result bhejo
+        return res.json([]);
+    }
+
+    // Post ke title me search karo (case-insensitive)
     const posts = await Post.findAll({
+        where: {
+            title: {
+                [Op.iLike]: `%${q}%` // iLike case-insensitive search ke liye hai
+            }
+        },
+        limit: 25, // Thode aur results dikhao
         order: [['postDate', 'DESC']],
-        include: {
-            model: SubCategory,
-            where: { slug: req.params.subCategorySlug },
-            required: true,
-            include: { model: Category } // Parent category ki info bhi le aao
-        }
+        include: { model: SubCategory, include: { model: Category } }
     });
+
     res.json(posts);
 }));
 // BACKEND -> server.js (ADD THIS NEW ROUTE)
