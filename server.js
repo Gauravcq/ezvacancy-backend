@@ -89,6 +89,33 @@ app.get('/api/posts/type/:postType', asyncHandler(async (req, res) => {
     const posts = await Post.findAll({ where: { postType: postType }, order: [['postDate', 'DESC']], include: { model: SubCategory, include: { model: Category } } });
     res.json(posts);
 }));
+// BACKEND -> server.js (ADD THESE 2 NEW ROUTES)
+
+// Naya Route 1: Ek category ki saari sub-categories laane ke liye (filter buttons banane ke liye)
+app.get('/api/subcategories/:categorySlug', asyncHandler(async (req, res) => {
+    const subCategories = await SubCategory.findAll({
+        include: {
+            model: Category,
+            where: { slug: req.params.categorySlug },
+            attributes: [] // Humein Category ki details nahi chahiye, sirf filter ke liye use karna hai
+        }
+    });
+    res.json(subCategories);
+}));
+
+// Naya Route 2: Ek specific sub-category ke saare posts laane ke liye
+app.get('/api/posts/subcategory/:subCategorySlug', asyncHandler(async (req, res) => {
+    const posts = await Post.findAll({
+        order: [['postDate', 'DESC']],
+        include: {
+            model: SubCategory,
+            where: { slug: req.params.subCategorySlug },
+            required: true,
+            include: { model: Category } // Parent category ki info bhi le aao
+        }
+    });
+    res.json(posts);
+}));
 
 // === 5. ADMINJS SETUP & SERVER START ===
 const start = async () => {
