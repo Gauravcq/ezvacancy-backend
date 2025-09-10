@@ -1,5 +1,5 @@
-// FINAL CORRECTED VERSION - DELETE ALL OLD CODE BEFORE PASTING THIS
-import { Op } from 'sequelize'; 
+// FINAL server.js with SEARCH ROUTE INCLUDED
+
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -7,12 +7,11 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import AdminJS from 'adminjs';
 import AdminJSExpress from '@adminjs/express';
-import { Sequelize, DataTypes } from 'sequelize';
+import { Sequelize, DataTypes, Op } from 'sequelize'; // "Op" is imported
 import AdminJSSequelize from '@adminjs/sequelize';
 import session from 'express-session';
 
 // --- HELPER FUNCTIONS ---
-// Converts "Key : Value" string from textarea to a JSON object for the database
 const parseKeyValueString = (str) => {
     if (!str || typeof str !== 'string' || str.trim() === '') { return {}; }
     const obj = {};
@@ -26,8 +25,6 @@ const parseKeyValueString = (str) => {
     });
     return obj;
 };
-
-// Converts a JSON object from the database back to a "Key : Value" string for the textarea
 const formatObjectToString = (obj) => {
     if (!obj || typeof obj !== 'object' || Object.keys(obj).length === 0) {
         return '';
@@ -67,6 +64,7 @@ app.use(morgan('tiny'));
 // === 4. PUBLIC API ROUTES ===
 const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
 app.get('/api/homepage-sections', asyncHandler(async (req, res) => {
     const sscPosts = await Post.findAll({ limit: 10, order: [['postDate', 'DESC']], include: { model: SubCategory, required: true, include: { model: Category, where: { slug: 'ssc' }}}});
     const railwayPosts = await Post.findAll({ limit: 10, order: [['postDate', 'DESC']], include: { model: SubCategory, required: true, include: { model: Category, where: { slug: 'railway' }}}});
@@ -89,69 +87,15 @@ app.get('/api/posts/type/:postType', asyncHandler(async (req, res) => {
     const posts = await Post.findAll({ where: { postType: postType }, order: [['postDate', 'DESC']], include: { model: SubCategory, include: { model: Category } } });
     res.json(posts);
 }));
-// BACKEND -> server.js (ADD THESE 2 NEW ROUTES)
-
-// Naya Route 1: Ek category ki saari sub-categories laane ke liye (filter buttons banane ke liye)
-app.get('/api/subcategories/:categorySlug', asyncHandler(async (req, res) => {
-    const subCategories = await SubCategory.findAll({
-        include: {
-            model: Category,
-            where: { slug: req.params.categorySlug },
-            attributes: [] // Humein Category ki details nahi chahiye, sirf filter ke liye use karna hai
-        }
-    });
-    res.json(subCategories);
-}));
-
-// Naya API Route: Search ke liye
 app.get('/api/search', asyncHandler(async (req, res) => {
-    const { q } = req.query; // URL se search query nikalo (e.g., ?q=cgl)
-
-    if (!q || q.trim().length < 2) { // Changed to 2 characters for better search
-        // Agar query nahi hai ya 2 characters se chhoti hai, to khaali result bhejo
-        return res.json([]);
-    }
-
-    // Post ke title me search karo (case-insensitive)
+    const { q } = req.query; 
+    if (!q || q.trim().length < 2) { return res.json([]); }
     const posts = await Post.findAll({
-        where: {
-            title: {
-                [Op.iLike]: `%${q}%` // iLike case-insensitive search ke liye hai
-            }
-        },
-        limit: 25, // Thode aur results dikhao
+        where: { title: { [Op.iLike]: `%${q}%` } },
+        limit: 25,
         order: [['postDate', 'DESC']],
         include: { model: SubCategory, include: { model: Category } }
     });
-
-    res.json(posts);
-}));
-// BACKEND -> server.js (ADD THIS NEW ROUTE)
-
-// ... baaki API routes ke baad ...
-import { Op } from 'sequelize'; // Yeh line file ke sabse upar, baaki imports ke saath daalein
-
-// Naya API Route: Search ke liye
-app.get('/api/search', asyncHandler(async (req, res) => {
-    const { q } = req.query; // URL se search query nikalo (e.g., ?q=cgl)
-
-    if (!q || q.trim().length < 3) {
-        // Agar query nahi hai ya 3 characters se chhoti hai, to khaali result bhejo
-        return res.json([]);
-    }
-
-    // Post ke title me search karo (case-insensitive)
-    const posts = await Post.findAll({
-        where: {
-            title: {
-                [Op.iLike]: `%${q}%` // iLike case-insensitive search ke liye hai
-            }
-        },
-        limit: 20, // Sirf 20 results dikhao
-        order: [['postDate', 'DESC']],
-        include: { model: SubCategory, include: { model: Category } }
-    });
-
     res.json(posts);
 }));
 
